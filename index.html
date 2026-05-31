@@ -924,7 +924,6 @@ input[type=range]::-webkit-slider-thumb{
   document.getElementById('btn-accent').addEventListener('click',function(){
     accentIdx=(accentIdx+1)%accentThemes.length;
     applyAccent(accentIdx);
-    toast('● '+accentThemes[accentIdx].label);
   });
 
   // MAP TILE THEMES — clean stroke SVG icons, accent-coloured
