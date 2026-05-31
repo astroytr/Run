@@ -192,11 +192,11 @@ input[type=range]::-webkit-slider-thumb{
 #clear-row{padding:14px 20px;}
 #btn-clear-all{
   width:100%;padding:13px;border-radius:12px;
-  background:transparent;border:1px solid rgba(255,68,85,.3);
-  color:var(--red);font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;
+  background:var(--red);border:1px solid transparent;
+  color:#fff;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;
   cursor:pointer;transition:.15s;letter-spacing:.3px;
 }
-#btn-clear-all:active{background:rgba(255,68,85,.08);}
+#btn-clear-all:active{background:#cc2233;}
 
 /* SAVED PANE */
 #save-row{padding:14px 20px;border-bottom:1px solid var(--dim);display:flex;gap:10px;}
@@ -922,7 +922,8 @@ input[type=range]::-webkit-slider-thumb{
       filter:'brightness(.18) saturate(0)',
       attr:'© OpenStreetMap',
       icon:function(c){
-        return '<path d="M26 23.5a10 10 0 1 1-11.5-9.8 7.5 7.5 0 0 0 11.5 9.8z" fill="'+c+'"/>';
+        // Centred crescent moon at 22,22
+        return '<path d="M28 22a9 9 0 1 1-10.5-8.8 6.8 6.8 0 0 0 10.5 8.8z" fill="'+c+'"/>';
       }
     },
     {
@@ -978,7 +979,7 @@ input[type=range]::-webkit-slider-thumb{
   document.getElementById('btn-maptile').addEventListener('click',function(){
     tileIdx=(tileIdx+1)%tileThemes.length;
     applyTileTheme(tileIdx);
-    toast('🗺 '+tileThemes[tileIdx].label);
+    toast(tileThemes[tileIdx].label.toUpperCase());
   });
 
   // Centre side buttons to pill
