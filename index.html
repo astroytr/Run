@@ -75,10 +75,10 @@ html,body{height:100%;width:100%;background:#000;color:#e8ffe8;font-family:'DM S
 #fab-snap.on{color:var(--g);border-color:var(--g);background:rgba(34,255,102,.08);}
 #fab-snap.fetching{color:var(--g);border-color:var(--g);animation:blink .6s infinite;}
 
-/* STAT PILL — top centre */
+/* STAT PILL — top centre, squircle */
 #statpill{
   position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;
-  background:rgba(0,0,0,.88);border:1px solid var(--gborder);border-radius:99px;
+  background:rgba(0,0,0,.88);border:1px solid var(--gborder);border-radius:16px;
   padding:7px 20px;display:flex;align-items:center;gap:18px;
   backdrop-filter:blur(10px);white-space:nowrap;
 }
@@ -320,14 +320,14 @@ input[type=range]::-webkit-slider-thumb{
 /* ACCENT BUTTON — top left, squircle, full bg */
 #btn-accent{
   position:fixed;top:14px;left:14px;z-index:300;
-  width:44px;height:44px;padding:0;
-  border-radius:14px;overflow:hidden;
+  width:36px;height:36px;padding:0;
+  border-radius:11px;overflow:hidden;
   background:var(--g);border:1.5px solid transparent;
   cursor:pointer;transition:background .2s, border-color .15s;
   display:flex;align-items:center;justify-content:center;
 }
 #btn-accent:active{filter:brightness(.85);}
-#btn-accent svg{width:20px;height:20px;color:#000;}
+#btn-accent svg{width:16px;height:16px;color:#000;}
 </style>
 </head>
 <body>
@@ -899,15 +899,18 @@ input[type=range]::-webkit-slider-thumb{
       attr:'© OpenStreetMap',
       // canvas thumbnail: dark roads look
       drawThumb:function(ctx){
+        // Moon icon — dark mode
         ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,36,36);
-        // road grid
-        ctx.strokeStyle='#1a2a1a';ctx.lineWidth=2;
-        ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(36,18);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(18,36);ctx.stroke();
-        ctx.strokeStyle='#0f1f0f';ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(0,9);ctx.lineTo(36,9);ctx.moveTo(0,27);ctx.lineTo(36,27);ctx.stroke();
-        // green accent dot
-        ctx.fillStyle='#22ff66';ctx.beginPath();ctx.arc(18,18,3,0,Math.PI*2);ctx.fill();
+        // moon crescent
+        ctx.fillStyle='#c8d8c8';
+        ctx.beginPath();ctx.arc(20,18,10,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#0a0a0a';
+        ctx.beginPath();ctx.arc(24,15,9,0,Math.PI*2);ctx.fill();
+        // stars
+        ctx.fillStyle='rgba(200,220,200,.7)';
+        [[6,6],[10,24],[28,28],[30,8],[5,16]].forEach(function(s){
+          ctx.beginPath();ctx.arc(s[0],s[1],1,0,Math.PI*2);ctx.fill();
+        });
       }
     },
     {
@@ -916,16 +919,19 @@ input[type=range]::-webkit-slider-thumb{
       filter:'brightness(.85) saturate(.8)',
       attr:'© Esri',
       drawThumb:function(ctx){
-        // earthy satellite gradient blocks
-        var g=ctx.createLinearGradient(0,0,36,36);
-        g.addColorStop(0,'#2d4a1e');g.addColorStop(.4,'#3d6b2a');g.addColorStop(.7,'#5a8040');g.addColorStop(1,'#1a3010');
-        ctx.fillStyle=g;ctx.fillRect(0,0,36,36);
-        ctx.fillStyle='rgba(80,120,60,.6)';ctx.fillRect(0,0,20,20);
-        ctx.fillStyle='rgba(30,50,20,.5)';ctx.fillRect(18,16,18,20);
-        // water patch
-        ctx.fillStyle='rgba(20,50,80,.7)';
-        ctx.beginPath();ctx.ellipse(28,8,8,5,0.4,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle='rgba(0,229,255,.7)';ctx.beginPath();ctx.arc(28,8,2,0,Math.PI*2);ctx.fill();
+        // Globe icon — satellite mode
+        ctx.fillStyle='#0a1520';ctx.fillRect(0,0,36,36);
+        // ocean
+        ctx.fillStyle='#0d3a5c';ctx.beginPath();ctx.arc(18,18,13,0,Math.PI*2);ctx.fill();
+        // land masses
+        ctx.fillStyle='#1a5c2a';
+        ctx.beginPath();ctx.ellipse(14,16,6,5,-.3,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.ellipse(23,20,4,3,.2,0,Math.PI*2);ctx.fill();
+        // globe lines
+        ctx.strokeStyle='rgba(100,180,255,.25)';ctx.lineWidth=.8;
+        ctx.beginPath();ctx.arc(18,18,13,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.ellipse(18,18,13,6,0,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(18,5);ctx.lineTo(18,31);ctx.stroke();
       }
     },
     {
@@ -935,15 +941,23 @@ input[type=range]::-webkit-slider-thumb{
       attr:'© Esri',
       overlay:true,
       drawThumb:function(ctx){
-        var g=ctx.createLinearGradient(0,0,36,36);
-        g.addColorStop(0,'#2d4a1e');g.addColorStop(.5,'#3d6b2a');g.addColorStop(1,'#1a3010');
-        ctx.fillStyle=g;ctx.fillRect(0,0,36,36);
-        // road overlay lines
-        ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(36,18);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(22,36);ctx.stroke();
-        ctx.strokeStyle='rgba(255,255,200,.3)';ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(0,10);ctx.lineTo(36,26);ctx.stroke();
+        // Layers stack icon — hybrid mode
+        ctx.fillStyle='#0a1410';ctx.fillRect(0,0,36,36);
+        var layers=[
+          {y:22,c:'rgba(30,100,50,.9)'},
+          {y:17,c:'rgba(50,140,80,.85)'},
+          {y:12,c:'rgba(70,180,110,.8)'},
+        ];
+        layers.forEach(function(l){
+          ctx.fillStyle=l.c;
+          ctx.beginPath();
+          ctx.moveTo(18,l.y-4);ctx.lineTo(30,l.y);ctx.lineTo(18,l.y+4);ctx.lineTo(6,l.y);
+          ctx.closePath();ctx.fill();
+          ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=.5;ctx.stroke();
+        });
+        // road line on top layer
+        ctx.strokeStyle='rgba(255,255,200,.5)';ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(10,12);ctx.lineTo(26,12);ctx.stroke();
       }
     }
   ];
