@@ -468,7 +468,6 @@ input[type=range]::-webkit-slider-thumb{
     var lm=L.marker([ll.lat,ll.lng],{icon:mkIcon(markers.length+1,markers.length===0?'s':'e')}).addTo(map);
     markers.push({ll:ll,lm:lm});
     refresh();
-    if(!sheetOpen){sheetOpen=true;sheet.classList.add('open');}
   });
 
   // LOCATE — zoom in on user
