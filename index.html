@@ -304,30 +304,30 @@ input[type=range]::-webkit-slider-thumb{
 .htext{flex:1;}
 .hlbl{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
 .hdesc{font-size:10px;color:var(--muted);line-height:1.5;}
-/* MAP THEME BUTTON — top right, squircle */
+/* MAP THEME BUTTON — top right, squircle, matches island height */
 #btn-maptile{
   position:fixed;top:14px;right:14px;z-index:300;
   width:44px;height:44px;padding:0;
   border-radius:14px;overflow:hidden;
-  background:#111;border:1.5px solid var(--gborder);
+  background:#111;border:1px solid var(--gborder);
   cursor:pointer;transition:border-color .15s;
 }
 #btn-maptile:active{border-color:var(--g);}
 #map-thumb{
-  width:44px;height:44px;display:block;border-radius:12px;
+  width:44px;height:44px;display:block;
 }
 
-/* ACCENT BUTTON — top left, squircle, full bg */
+/* ACCENT BUTTON — top left, squircle, full bg, matches island height */
 #btn-accent{
   position:fixed;top:14px;left:14px;z-index:300;
-  width:36px;height:36px;padding:0;
-  border-radius:11px;overflow:hidden;
-  background:var(--g);border:1.5px solid transparent;
-  cursor:pointer;transition:background .2s, border-color .15s;
+  width:44px;height:44px;padding:0;
+  border-radius:14px;overflow:hidden;
+  background:var(--g);border:1px solid transparent;
+  cursor:pointer;transition:background .2s;
   display:flex;align-items:center;justify-content:center;
 }
-#btn-accent:active{filter:brightness(.85);}
-#btn-accent svg{width:16px;height:16px;color:#000;}
+#btn-accent:active{filter:brightness(.8);}
+#btn-accent svg{width:18px;height:18px;color:#000;}
 </style>
 </head>
 <body>
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{
 
 <!-- MAP THEME button top-right — squircle, thumbnail preview -->
 <button id="btn-maptile" title="Map style">
-  <canvas id="map-thumb" width="36" height="36"></canvas>
+  <canvas id="map-thumb" width="44" height="44"></canvas>
 </button>
 
 <!-- ACCENT button top-left — squircle, full bg colour, lightning bolt icon -->
@@ -899,18 +899,20 @@ input[type=range]::-webkit-slider-thumb{
       attr:'© OpenStreetMap',
       // canvas thumbnail: dark roads look
       drawThumb:function(ctx){
-        // Moon icon — dark mode
-        ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,36,36);
-        // moon crescent
-        ctx.fillStyle='#c8d8c8';
-        ctx.beginPath();ctx.arc(20,18,10,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle='#0a0a0a';
-        ctx.beginPath();ctx.arc(24,15,9,0,Math.PI*2);ctx.fill();
-        // stars
-        ctx.fillStyle='rgba(200,220,200,.7)';
-        [[6,6],[10,24],[28,28],[30,8],[5,16]].forEach(function(s){
-          ctx.beginPath();ctx.arc(s[0],s[1],1,0,Math.PI*2);ctx.fill();
+        var s=44;
+        // Dark — clean crescent moon on deep black
+        ctx.fillStyle='#060810';ctx.fillRect(0,0,s,s);
+        // subtle star field
+        ctx.fillStyle='rgba(200,210,255,.5)';
+        [[8,10],[35,8],[12,34],[38,30],[22,6],[6,26],[40,18]].forEach(function(p){
+          ctx.beginPath();ctx.arc(p[0],p[1],.9,0,Math.PI*2);ctx.fill();
         });
+        // moon disc
+        ctx.fillStyle='#d8dde8';
+        ctx.beginPath();ctx.arc(24,22,11,0,Math.PI*2);ctx.fill();
+        // bite out
+        ctx.fillStyle='#060810';
+        ctx.beginPath();ctx.arc(29,18,10,0,Math.PI*2);ctx.fill();
       }
     },
     {
@@ -919,19 +921,27 @@ input[type=range]::-webkit-slider-thumb{
       filter:'brightness(.85) saturate(.8)',
       attr:'© Esri',
       drawThumb:function(ctx){
-        // Globe icon — satellite mode
-        ctx.fillStyle='#0a1520';ctx.fillRect(0,0,36,36);
+        var s=44,cx=22,cy=22,r=14;
+        // Satellite — clean globe
+        ctx.fillStyle='#050d18';ctx.fillRect(0,0,s,s);
         // ocean
-        ctx.fillStyle='#0d3a5c';ctx.beginPath();ctx.arc(18,18,13,0,Math.PI*2);ctx.fill();
-        // land masses
-        ctx.fillStyle='#1a5c2a';
-        ctx.beginPath();ctx.ellipse(14,16,6,5,-.3,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.ellipse(23,20,4,3,.2,0,Math.PI*2);ctx.fill();
-        // globe lines
-        ctx.strokeStyle='rgba(100,180,255,.25)';ctx.lineWidth=.8;
-        ctx.beginPath();ctx.arc(18,18,13,0,Math.PI*2);ctx.stroke();
-        ctx.beginPath();ctx.ellipse(18,18,13,6,0,0,Math.PI*2);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(18,5);ctx.lineTo(18,31);ctx.stroke();
+        var og=ctx.createRadialGradient(cx-4,cy-4,2,cx,cy,r);
+        og.addColorStop(0,'#1565a0');og.addColorStop(1,'#0a3060');
+        ctx.fillStyle=og;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+        // land blobs
+        ctx.fillStyle='#2e7d32';
+        ctx.beginPath();ctx.ellipse(18,19,5,4,-.4,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.ellipse(27,24,3,2.5,.3,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#388e3c';
+        ctx.beginPath();ctx.ellipse(20,27,3,2,0,0,Math.PI*2);ctx.fill();
+        // lat/lon grid lines
+        ctx.strokeStyle='rgba(150,200,255,.18)';ctx.lineWidth=.7;
+        ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.ellipse(cx,cy,r,r*.4,0,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
+        // atmosphere glow
+        ctx.strokeStyle='rgba(100,180,255,.12)';ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(cx,cy,r+1,0,Math.PI*2);ctx.stroke();
       }
     },
     {
@@ -941,23 +951,25 @@ input[type=range]::-webkit-slider-thumb{
       attr:'© Esri',
       overlay:true,
       drawThumb:function(ctx){
-        // Layers stack icon — hybrid mode
-        ctx.fillStyle='#0a1410';ctx.fillRect(0,0,36,36);
-        var layers=[
-          {y:22,c:'rgba(30,100,50,.9)'},
-          {y:17,c:'rgba(50,140,80,.85)'},
-          {y:12,c:'rgba(70,180,110,.8)'},
+        var s=44;
+        // Hybrid — clean layers stack
+        ctx.fillStyle='#080c08';ctx.fillRect(0,0,s,s);
+        // three diamond layers, bottom to top
+        var lyrs=[
+          {y:30,fill:'#1b4d2a',stroke:'#2e7d44'},
+          {y:23,fill:'#256636',stroke:'#3da358'},
+          {y:16,fill:'#2e7d44',stroke:'#52c97a'},
         ];
-        layers.forEach(function(l){
-          ctx.fillStyle=l.c;
+        lyrs.forEach(function(l){
+          ctx.fillStyle=l.fill;
           ctx.beginPath();
-          ctx.moveTo(18,l.y-4);ctx.lineTo(30,l.y);ctx.lineTo(18,l.y+4);ctx.lineTo(6,l.y);
+          ctx.moveTo(22,l.y-6);ctx.lineTo(36,l.y);ctx.lineTo(22,l.y+6);ctx.lineTo(8,l.y);
           ctx.closePath();ctx.fill();
-          ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=.5;ctx.stroke();
+          ctx.strokeStyle=l.stroke;ctx.lineWidth=.8;ctx.stroke();
         });
-        // road line on top layer
-        ctx.strokeStyle='rgba(255,255,200,.5)';ctx.lineWidth=1.2;
-        ctx.beginPath();ctx.moveTo(10,12);ctx.lineTo(26,12);ctx.stroke();
+        // subtle road line on top layer
+        ctx.strokeStyle='rgba(255,255,180,.45)';ctx.lineWidth=1.2;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(13,16);ctx.lineTo(31,16);ctx.stroke();
       }
     }
   ];
@@ -967,15 +979,15 @@ input[type=range]::-webkit-slider-thumb{
   function drawThumb(idx){
     var canvas=document.getElementById('map-thumb');
     var ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,36,36);
+    ctx.clearRect(0,0,44,44);
     // rounded clip
-    ctx.beginPath();ctx.roundRect(0,0,36,36,10);ctx.clip();
+    ctx.save();
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(0,0,44,44,12);
+    else ctx.rect(0,0,44,44);
+    ctx.clip();
     tileThemes[idx].drawThumb(ctx);
-    // next-mode indicator: tiny label bottom
-    ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,24,36,12);
-    var next=tileThemes[(idx+1)%tileThemes.length].label;
-    ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='bold 7px monospace';ctx.textAlign='center';
-    ctx.fillText(next,18,33);
+    ctx.restore();
   }
 
   function applyTileTheme(idx){
@@ -1004,7 +1016,6 @@ input[type=range]::-webkit-slider-thumb{
     {label:'Green', g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)', gglow:'rgba(34,255,102,.08)', text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
     {label:'White', g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666', dim:'#222'},
     {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)', gglow:'rgba(255,140,66,.08)', text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
-    {label:'Cyan', g:'#00e5ff', g2:'#00b8cc', gborder:'rgba(0,229,255,.22)', gglow:'rgba(0,229,255,.08)', text:'#e0faff', muted:'#2a6a7a', dim:'#0d2f36'},
   ];
   var accentIdx=0;
 
