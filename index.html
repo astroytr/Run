@@ -304,32 +304,30 @@ input[type=range]::-webkit-slider-thumb{
 .htext{flex:1;}
 .hlbl{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
 .hdesc{font-size:10px;color:var(--muted);line-height:1.5;}
-/* MAP THEME BUTTON — top right */
+/* MAP THEME BUTTON — top right, squircle */
 #btn-maptile{
   position:fixed;top:14px;right:14px;z-index:300;
-  display:flex;align-items:center;gap:6px;
-  background:rgba(0,0,0,.82);border:1px solid var(--gborder);
-  color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.5px;
-  padding:7px 12px;border-radius:99px;cursor:pointer;
-  backdrop-filter:blur(10px);transition:.15s;
+  width:44px;height:44px;padding:0;
+  border-radius:14px;overflow:hidden;
+  background:#111;border:1.5px solid var(--gborder);
+  cursor:pointer;transition:border-color .15s;
 }
-#btn-maptile svg{width:14px;height:14px;flex-shrink:0;}
-#btn-maptile:active{border-color:var(--g);color:var(--g);}
+#btn-maptile:active{border-color:var(--g);}
+#map-thumb{
+  width:44px;height:44px;display:block;border-radius:12px;
+}
 
-/* ACCENT BUTTON — top left */
+/* ACCENT BUTTON — top left, squircle, full bg */
 #btn-accent{
   position:fixed;top:14px;left:14px;z-index:300;
-  display:flex;align-items:center;gap:7px;
-  background:rgba(0,0,0,.82);border:1px solid var(--gborder);
-  color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.5px;
-  padding:7px 12px;border-radius:99px;cursor:pointer;
-  backdrop-filter:blur(10px);transition:.15s;
+  width:44px;height:44px;padding:0;
+  border-radius:14px;overflow:hidden;
+  background:var(--g);border:1.5px solid transparent;
+  cursor:pointer;transition:background .2s, border-color .15s;
+  display:flex;align-items:center;justify-content:center;
 }
-#btn-accent:active{border-color:var(--g);color:var(--g);}
-#accent-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--g);flex-shrink:0;transition:.2s;
-}
+#btn-accent:active{filter:brightness(.85);}
+#btn-accent svg{width:20px;height:20px;color:#000;}
 </style>
 </head>
 <body>
@@ -338,16 +336,15 @@ input[type=range]::-webkit-slider-thumb{
 
 <div id="topbar"></div>
 
-<!-- MAP THEME button top-right -->
+
+<!-- MAP THEME button top-right — squircle, thumbnail preview -->
 <button id="btn-maptile" title="Map style">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-  <span id="maptile-lbl">Dark</span>
+  <canvas id="map-thumb" width="36" height="36"></canvas>
 </button>
 
-<!-- ACCENT button top-left -->
+<!-- ACCENT button top-left — squircle, full bg colour, lightning bolt icon -->
 <button id="btn-accent" title="App colour">
-  <div id="accent-dot"></div>
-  <span id="accent-lbl">Green</span>
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
 </button>
 <div id="logo"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>RUNioi</div>
 
@@ -899,44 +896,93 @@ input[type=range]::-webkit-slider-thumb{
       label:'Dark',
       url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       filter:'brightness(.18) saturate(0)',
-      attr:'© OpenStreetMap'
+      attr:'© OpenStreetMap',
+      // canvas thumbnail: dark roads look
+      drawThumb:function(ctx){
+        ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,36,36);
+        // road grid
+        ctx.strokeStyle='#1a2a1a';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(36,18);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(18,36);ctx.stroke();
+        ctx.strokeStyle='#0f1f0f';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(0,9);ctx.lineTo(36,9);ctx.moveTo(0,27);ctx.lineTo(36,27);ctx.stroke();
+        // green accent dot
+        ctx.fillStyle='#22ff66';ctx.beginPath();ctx.arc(18,18,3,0,Math.PI*2);ctx.fill();
+      }
     },
     {
       label:'Satellite',
       url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       filter:'brightness(.85) saturate(.8)',
-      attr:'© Esri'
+      attr:'© Esri',
+      drawThumb:function(ctx){
+        // earthy satellite gradient blocks
+        var g=ctx.createLinearGradient(0,0,36,36);
+        g.addColorStop(0,'#2d4a1e');g.addColorStop(.4,'#3d6b2a');g.addColorStop(.7,'#5a8040');g.addColorStop(1,'#1a3010');
+        ctx.fillStyle=g;ctx.fillRect(0,0,36,36);
+        ctx.fillStyle='rgba(80,120,60,.6)';ctx.fillRect(0,0,20,20);
+        ctx.fillStyle='rgba(30,50,20,.5)';ctx.fillRect(18,16,18,20);
+        // water patch
+        ctx.fillStyle='rgba(20,50,80,.7)';
+        ctx.beginPath();ctx.ellipse(28,8,8,5,0.4,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='rgba(0,229,255,.7)';ctx.beginPath();ctx.arc(28,8,2,0,Math.PI*2);ctx.fill();
+      }
     },
     {
       label:'Hybrid',
       url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       filter:'brightness(.9) saturate(1)',
       attr:'© Esri',
-      overlay:true
+      overlay:true,
+      drawThumb:function(ctx){
+        var g=ctx.createLinearGradient(0,0,36,36);
+        g.addColorStop(0,'#2d4a1e');g.addColorStop(.5,'#3d6b2a');g.addColorStop(1,'#1a3010');
+        ctx.fillStyle=g;ctx.fillRect(0,0,36,36);
+        // road overlay lines
+        ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(36,18);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(22,36);ctx.stroke();
+        ctx.strokeStyle='rgba(255,255,200,.3)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(0,10);ctx.lineTo(36,26);ctx.stroke();
+      }
     }
   ];
   var tileIdx=0;
   var overlayLayer=null;
+
+  function drawThumb(idx){
+    var canvas=document.getElementById('map-thumb');
+    var ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,36,36);
+    // rounded clip
+    ctx.beginPath();ctx.roundRect(0,0,36,36,10);ctx.clip();
+    tileThemes[idx].drawThumb(ctx);
+    // next-mode indicator: tiny label bottom
+    ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,24,36,12);
+    var next=tileThemes[(idx+1)%tileThemes.length].label;
+    ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='bold 7px monospace';ctx.textAlign='center';
+    ctx.fillText(next,18,33);
+  }
 
   function applyTileTheme(idx){
     var theme=tileThemes[idx];
     if(tileLayer){map.removeLayer(tileLayer);}
     if(overlayLayer){map.removeLayer(overlayLayer);overlayLayer=null;}
     tileLayer=L.tileLayer(theme.url,{maxZoom:19,attribution:theme.attr}).addTo(map);
-    document.querySelector('.leaflet-tile-pane').style.filter=theme.filter;
-    document.getElementById('maptile-lbl').textContent=theme.label;
-    // for hybrid add road labels overlay
+    var pane=document.querySelector('.leaflet-tile-pane');
+    if(pane)pane.style.filter=theme.filter;
     if(theme.overlay){
       overlayLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {maxZoom:19,opacity:.45}).addTo(map);
     }
+    drawThumb(idx);
   }
   applyTileTheme(0);
 
   document.getElementById('btn-maptile').addEventListener('click',function(){
     tileIdx=(tileIdx+1)%tileThemes.length;
     applyTileTheme(tileIdx);
-    toast('🗺 '+tileThemes[tileIdx].label+' map');
+    toast('🗺 '+tileThemes[tileIdx].label);
   });
 
   // ACCENT COLOUR THEMES
@@ -951,21 +997,16 @@ input[type=range]::-webkit-slider-thumb{
   function applyAccent(idx){
     var a=accentThemes[idx];
     var r=document.documentElement.style;
-    r.setProperty('--g',a.g);
-    r.setProperty('--g2',a.g2);
-    r.setProperty('--gborder',a.gborder);
-    r.setProperty('--gglow',a.gglow);
-    r.setProperty('--text',a.text);
-    r.setProperty('--muted',a.muted);
-    r.setProperty('--dim',a.dim);
-    document.getElementById('accent-dot').style.background=a.g;
-    document.getElementById('accent-lbl').textContent=a.label;
+    r.setProperty('--g',a.g);r.setProperty('--g2',a.g2);
+    r.setProperty('--gborder',a.gborder);r.setProperty('--gglow',a.gglow);
+    r.setProperty('--text',a.text);r.setProperty('--muted',a.muted);r.setProperty('--dim',a.dim);
+    document.getElementById('btn-accent').style.background=a.g;
   }
 
   document.getElementById('btn-accent').addEventListener('click',function(){
     accentIdx=(accentIdx+1)%accentThemes.length;
     applyAccent(accentIdx);
-    toast('● '+accentThemes[accentIdx].label+' accent');
+    toast('● '+accentThemes[accentIdx].label);
   });
 
   // INIT
