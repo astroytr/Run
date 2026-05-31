@@ -15,6 +15,7 @@ html,body{height:100%;width:100%;background:#000;color:#e8ffe8;font-family:'DM S
   --g2:#18cc50;
   --gborder:rgba(34,255,102,.22);
   --gglow:rgba(34,255,102,.08);
+  --glow50:rgba(34,255,102,.5);
   --text:#d8f5d8;
   --muted:#3d6b3d;
   --dim:#213521;
@@ -69,10 +70,10 @@ html,body{height:100%;width:100%;background:#000;color:#e8ffe8;font-family:'DM S
 #fab-undo.active{color:var(--text);}
 
 /* LOOP FAB */
-#fab-loop.on{color:var(--g);border-color:var(--g);background:rgba(34,255,102,.08);}
+#fab-loop.on{color:var(--g);border-color:var(--g);background:var(--gglow);}
 
 /* SNAP FAB */
-#fab-snap.on{color:var(--g);border-color:var(--g);background:rgba(34,255,102,.08);}
+#fab-snap.on{color:var(--g);border-color:var(--g);background:var(--gglow);}
 #fab-snap.fetching{color:var(--g);border-color:var(--g);animation:blink .6s infinite;}
 
 /* STAT PILL — top centre, squircle */
@@ -149,9 +150,12 @@ input[type=range]{
   -webkit-appearance:none;flex:1;height:2px;
   background:var(--dim);border-radius:1px;outline:none;
 }
+input[type=range].accent-fill{
+  background:linear-gradient(to right, var(--g) 0%, var(--g) var(--range-pct,50%), var(--dim) var(--range-pct,50%));
+}
 input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
-  background:var(--g);cursor:pointer;box-shadow:0 0 10px rgba(34,255,102,.5);
+  background:var(--g);cursor:pointer;box-shadow:0 0 10px var(--glow50);
 }
 
 /* UNIT TOGGLE */
@@ -434,7 +438,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <div id="pace-section">
         <label>Pace&nbsp;<span id="pace-v">6:00/km</span></label>
-        <input type="range" id="pace" min="3" max="12" step="0.5" value="6">
+        <input type="range" id="pace" min="3" max="12" step="0.5" value="6" class="accent-fill">
       </div>
 
       <div id="wp-list">
@@ -581,24 +585,25 @@ input[type=range]::-webkit-slider-thumb{
     routePolylines=[];
     if(polyline){map.removeLayer(polyline);polyline=null;}
     if(markers.length<2)return;
+    var accentCol=getComputedStyle(document.documentElement).getPropertyValue('--g').trim()||'#22ff66';
     var hasAnySegment=segments.some(function(s){return s&&s.pts;});
     if(hasAnySegment){
       // draw each segment individually
       for(var i=0;i<markers.length-1;i++){
         var seg=segments[i];
         if(seg && seg.pts && seg.pts.length>1){
-          var p=L.polyline(seg.pts,{color:'#22ff66',weight:4,opacity:.92,smoothFactor:0,renderer:canvasRenderer}).addTo(map);
+          var p=L.polyline(seg.pts,{color:accentCol,weight:4,opacity:.92,smoothFactor:0,renderer:canvasRenderer}).addTo(map);
           routePolylines.push(p);
         } else {
           // pending or failed — dashed fallback
           var p=L.polyline([[markers[i].ll.lat,markers[i].ll.lng],[markers[i+1].ll.lat,markers[i+1].ll.lng]],
-            {color:'#22ff66',weight:3,opacity:.45,dashArray:'6 5',renderer:canvasRenderer}).addTo(map);
+            {color:accentCol,weight:3,opacity:.45,dashArray:'6 5',renderer:canvasRenderer}).addTo(map);
           routePolylines.push(p);
         }
       }
     } else {
       polyline=L.polyline(markers.map(function(m){return[m.ll.lat,m.ll.lng];}),
-        {color:'#22ff66',weight:4,opacity:.92,smoothFactor:1,dashArray:'10 8',renderer:canvasRenderer}).addTo(map);
+        {color:accentCol,weight:4,opacity:.92,smoothFactor:1,dashArray:'10 8',renderer:canvasRenderer}).addTo(map);
     }
   }
   function renderStats(){
@@ -773,12 +778,18 @@ input[type=range]::-webkit-slider-thumb{
   });
 
   // PACE
+  function updateRangeFill(el){
+    var pct=((el.value-el.min)/(el.max-el.min))*100;
+    el.style.setProperty('--range-pct',pct+'%');
+  }
   document.getElementById('pace').addEventListener('input',function(){
     paceMin=parseFloat(this.value);
     var m=Math.floor(paceMin),s=Math.round((paceMin-m)*60);
     document.getElementById('pace-v').textContent=m+':'+(s<10?'0':'')+s+'/km';
+    updateRangeFill(this);
     renderStats();
   });
+  updateRangeFill(document.getElementById('pace'));
 
   // TABS
   document.querySelectorAll('.stab').forEach(function(tab){
@@ -891,9 +902,9 @@ input[type=range]::-webkit-slider-thumb{
 
   // ACCENT COLOUR THEMES — declared first so map icon can use it
   var accentThemes=[
-    {label:'Green',  g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)',  gglow:'rgba(34,255,102,.08)',  text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
-    {label:'White',  g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666',    dim:'#222'},
-    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)',  gglow:'rgba(255,140,66,.08)',  text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
+    {label:'Green',  g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)',  gglow:'rgba(34,255,102,.08)',  glow50:'rgba(34,255,102,.5)',  text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
+    {label:'White',  g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', glow50:'rgba(255,255,255,.45)', text:'#f0f0f0', muted:'#666',    dim:'#222'},
+    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)',  gglow:'rgba(255,140,66,.08)',  glow50:'rgba(255,140,66,.5)',  text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
   ];
   var accentIdx=0;
 
@@ -901,10 +912,11 @@ input[type=range]::-webkit-slider-thumb{
     var a=accentThemes[idx];
     var rs=document.documentElement.style;
     rs.setProperty('--g',a.g);rs.setProperty('--g2',a.g2);
-    rs.setProperty('--gborder',a.gborder);rs.setProperty('--gglow',a.gglow);
+    rs.setProperty('--gborder',a.gborder);rs.setProperty('--gglow',a.gglow);rs.setProperty('--glow50',a.glow50);
     rs.setProperty('--text',a.text);rs.setProperty('--muted',a.muted);rs.setProperty('--dim',a.dim);
     document.getElementById('btn-accent').style.background=a.g;
     drawMapIcon(tileIdx);
+    drawLine();
   }
 
   document.getElementById('btn-accent').addEventListener('click',function(){
