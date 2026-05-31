@@ -304,9 +304,9 @@ input[type=range]::-webkit-slider-thumb{
 .htext{flex:1;}
 .hlbl{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
 .hdesc{font-size:10px;color:var(--muted);line-height:1.5;}
-/* MAP THEME BUTTON — top right, squircle, matches island height */
+/* MAP THEME BUTTON — top right, squircle, centred with island */
 #btn-maptile{
-  position:fixed;top:14px;right:14px;z-index:300;
+  position:fixed;top:13px;right:14px;z-index:300;
   width:44px;height:44px;padding:0;
   border-radius:14px;overflow:hidden;
   background:rgba(0,0,0,.88);border:1px solid var(--gborder);
@@ -315,13 +315,13 @@ input[type=range]::-webkit-slider-thumb{
   backdrop-filter:blur(10px);
 }
 #btn-maptile:active{border-color:var(--g);}
-#map-icon{width:26px;height:26px;}
+#map-icon{width:28px;height:28px;overflow:visible;}
 
-/* ACCENT BUTTON — top left, squircle, full bg, matches island height */
+/* ACCENT BUTTON — top left, squircle, centred with island */
 #btn-accent{
-  position:fixed;top:14px;left:14px;z-index:300;
+  position:fixed;top:13px;left:14px;z-index:300;
   width:44px;height:44px;padding:0;
-  border-radius:14px;overflow:hidden;
+  border-radius:14px;
   background:var(--g);border:1px solid transparent;
   cursor:pointer;transition:background .2s;
   display:flex;align-items:center;justify-content:center;
@@ -889,6 +889,30 @@ input[type=range]::-webkit-slider-thumb{
   });
   document.getElementById('dbg-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('dbg-run').click();});
 
+  // ACCENT COLOUR THEMES — declared first so map icon can use it
+  var accentThemes=[
+    {label:'Green',  g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)',  gglow:'rgba(34,255,102,.08)',  text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
+    {label:'White',  g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666',    dim:'#222'},
+    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)',  gglow:'rgba(255,140,66,.08)',  text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
+  ];
+  var accentIdx=0;
+
+  function applyAccent(idx){
+    var a=accentThemes[idx];
+    var rs=document.documentElement.style;
+    rs.setProperty('--g',a.g);rs.setProperty('--g2',a.g2);
+    rs.setProperty('--gborder',a.gborder);rs.setProperty('--gglow',a.gglow);
+    rs.setProperty('--text',a.text);rs.setProperty('--muted',a.muted);rs.setProperty('--dim',a.dim);
+    document.getElementById('btn-accent').style.background=a.g;
+    drawMapIcon(tileIdx);
+  }
+
+  document.getElementById('btn-accent').addEventListener('click',function(){
+    accentIdx=(accentIdx+1)%accentThemes.length;
+    applyAccent(accentIdx);
+    toast('● '+accentThemes[accentIdx].label);
+  });
+
   // MAP TILE THEMES — clean stroke SVG icons, accent-coloured
   var tileLayer=null;
   var tileThemes=[
@@ -897,7 +921,6 @@ input[type=range]::-webkit-slider-thumb{
       url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       filter:'brightness(.18) saturate(0)',
       attr:'© OpenStreetMap',
-      // Crescent moon — filled silhouette, same weight as bolt
       icon:function(c){
         return '<path d="M26 23.5a10 10 0 1 1-11.5-9.8 7.5 7.5 0 0 0 11.5 9.8z" fill="'+c+'"/>';
       }
@@ -907,13 +930,12 @@ input[type=range]::-webkit-slider-thumb{
       url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       filter:'brightness(.85) saturate(.8)',
       attr:'© Esri',
-      // Globe — clean strokes, same language as bolt outline
       icon:function(c){
         return '<circle cx="22" cy="22" r="11" fill="none" stroke="'+c+'" stroke-width="1.8"/>'
           +'<ellipse cx="22" cy="22" rx="5" ry="11" fill="none" stroke="'+c+'" stroke-width="1.4"/>'
           +'<line x1="11" y1="22" x2="33" y2="22" stroke="'+c+'" stroke-width="1.4"/>'
-          +'<line x1="13.5" y1="16" x2="30.5" y2="16" stroke="'+c+'" stroke-width="1" stroke-opacity=".5"/>'
-          +'<line x1="13.5" y1="28" x2="30.5" y2="28" stroke="'+c+'" stroke-width="1" stroke-opacity=".5"/>';
+          +'<line x1="13.5" y1="16" x2="30.5" y2="16" stroke="'+c+'" stroke-width="1" stroke-opacity=".55"/>'
+          +'<line x1="13.5" y1="28" x2="30.5" y2="28" stroke="'+c+'" stroke-width="1" stroke-opacity=".55"/>';
       }
     },
     {
@@ -922,25 +944,19 @@ input[type=range]::-webkit-slider-thumb{
       filter:'brightness(.9) saturate(1)',
       attr:'© Esri',
       overlay:true,
-      // Stacked layers — 3 parallelograms, same stroke weight as bolt
       icon:function(c){
-        return '<polygon points="22,14 33,19 22,24 11,19" fill="'+c+'" fill-opacity=".9" stroke="none"/>'
-          +'<polygon points="22,20 33,25 22,30 11,25" fill="'+c+'" fill-opacity=".45" stroke="none"/>'
-          +'<polygon points="22,26 33,31 22,36 11,31" fill="'+c+'" fill-opacity=".18" stroke="none"/>';
+        return '<polygon points="22,13 34,19 22,25 10,19" fill="'+c+'" fill-opacity=".95"/>'
+          +'<polygon points="22,20 34,26 22,32 10,26" fill="'+c+'" fill-opacity=".45"/>'
+          +'<polygon points="22,27 34,33 22,39 10,33" fill="'+c+'" fill-opacity=".15"/>';
       }
     }
   ];
   var tileIdx=0;
   var overlayLayer=null;
 
-  function getAccentColor(){
-    return accentThemes[accentIdx].g;
-  }
-
   function drawMapIcon(idx){
-    var c=getAccentColor();
+    var c=accentThemes[accentIdx].g;
     var svg=document.getElementById('map-icon');
-    svg.setAttribute('viewBox','0 0 44 44');
     svg.innerHTML=tileThemes[idx].icon(c);
   }
 
@@ -965,30 +981,18 @@ input[type=range]::-webkit-slider-thumb{
     toast('🗺 '+tileThemes[tileIdx].label);
   });
 
-  // ACCENT COLOUR THEMES
-  var accentThemes=[
-    {label:'Green',  g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)',  gglow:'rgba(34,255,102,.08)',  text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
-    {label:'White',  g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666',    dim:'#222'},
-    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)',  gglow:'rgba(255,140,66,.08)',  text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
-  ];
-  var accentIdx=0;
-
-  function applyAccent(idx){
-    var a=accentThemes[idx];
-    var rs=document.documentElement.style;
-    rs.setProperty('--g',a.g);rs.setProperty('--g2',a.g2);
-    rs.setProperty('--gborder',a.gborder);rs.setProperty('--gglow',a.gglow);
-    rs.setProperty('--text',a.text);rs.setProperty('--muted',a.muted);rs.setProperty('--dim',a.dim);
-    document.getElementById('btn-accent').style.background=a.g;
-    // re-tint the map icon with new accent
-    drawMapIcon(tileIdx);
+  // Centre side buttons to pill
+  function alignSideBtns(){
+    var pill=document.getElementById('statpill');
+    var r=pill.getBoundingClientRect();
+    var mid=r.top+r.height/2;
+    ['btn-accent','btn-maptile'].forEach(function(id){
+      var btn=document.getElementById(id);
+      btn.style.top=Math.round(mid-22)+'px';
+    });
   }
-
-  document.getElementById('btn-accent').addEventListener('click',function(){
-    accentIdx=(accentIdx+1)%accentThemes.length;
-    applyAccent(accentIdx);
-    toast('● '+accentThemes[accentIdx].label);
-  });
+  alignSideBtns();
+  window.addEventListener('resize',alignSideBtns);
 
   // INIT
   if(navigator.geolocation){
