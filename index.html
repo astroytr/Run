@@ -68,6 +68,13 @@ html,body{height:100%;width:100%;background:#000;color:#e8ffe8;font-family:'DM S
 #fab-undo{color:var(--muted);}
 #fab-undo.active{color:var(--text);}
 
+/* LOOP FAB */
+#fab-loop.on{color:var(--g);border-color:var(--g);background:rgba(34,255,102,.08);}
+
+/* SNAP FAB */
+#fab-snap.on{color:var(--g);border-color:var(--g);background:rgba(34,255,102,.08);}
+#fab-snap.fetching{color:var(--g);border-color:var(--g);animation:blink .6s infinite;}
+
 /* STAT PILL — top centre */
 #statpill{
   position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;
@@ -274,6 +281,12 @@ input[type=range]::-webkit-slider-thumb{
 </div>
 
 <div id="fabs">
+  <div class="fab" id="fab-snap" title="Snap to roads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+  </div>
+  <div class="fab" id="fab-loop" title="Out &amp; back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+  </div>
   <div class="fab" id="fab-locate" title="Find me">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
   </div>
@@ -357,7 +370,8 @@ input[type=range]::-webkit-slider-thumb{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
-  var markers=[], polyline=null, useKm=true, paceMin=6, sheetOpen=false;
+  var markers=[], polyline=null, useKm=true, paceMin=6, sheetOpen=false, loopMode=false, snapMode=false;
+  var locDot=null, segments=[], routePolylines=[];
   var saved=[];
   try{ saved=JSON.parse(localStorage.getItem('rf2_routes')||'[]'); }catch(e){}
 
@@ -403,9 +417,6 @@ input[type=range]::-webkit-slider-thumb{
     var s=Math.pow(Math.sin(dLa/2),2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.pow(Math.sin(dLo/2),2);
     return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
   }
-  function totalKm(){
-    var d=0;for(var i=1;i<markers.length;i++)d+=hav(markers[i-1].ll,markers[i].ll);return d;
-  }
   function fmtTime(km){
     var m=Math.round(km*paceMin);if(!m)return'—';
     var h=Math.floor(m/60),mn=m%60;return h?(h+'h'+(mn?' '+mn+'m':'')):mn+'m';
@@ -418,20 +429,48 @@ input[type=range]::-webkit-slider-thumb{
       m.lm.setIcon(mkIcon(i+1,i===0?'s':i===markers.length-1?'e':'m'));
     });
   }
+  function totalKm(){
+    if(snapMode && segments.length){
+      // sum routed segment distances; fall back to haversine for any missing
+      var d=0;
+      for(var i=0;i<markers.length-1;i++){
+        if(segments[i] && segments[i].km!=null) d+=segments[i].km;
+        else d+=hav(markers[i].ll,markers[i+1].ll);
+      }
+      return d;
+    }
+    var d=0;for(var i=1;i<markers.length;i++)d+=hav(markers[i-1].ll,markers[i].ll);return d;
+  }
   function drawLine(){
+    // remove all existing polylines
+    routePolylines.forEach(function(p){map.removeLayer(p);});
+    routePolylines=[];
     if(polyline){map.removeLayer(polyline);polyline=null;}
-    if(markers.length>1){
+    if(markers.length<2)return;
+    if(snapMode && segments.length){
+      for(var i=0;i<segments.length;i++){
+        if(segments[i] && segments[i].pts && segments[i].pts.length>1){
+          var p=L.polyline(segments[i].pts,{color:'#22ff66',weight:3.5,opacity:.9}).addTo(map);
+          routePolylines.push(p);
+        } else if(markers[i] && markers[i+1]){
+          // fallback straight line while routing
+          var p=L.polyline([[markers[i].ll.lat,markers[i].ll.lng],[markers[i+1].ll.lat,markers[i+1].ll.lng]],
+            {color:'#22ff66',weight:3.5,opacity:.5,dashArray:'6 6'}).addTo(map);
+          routePolylines.push(p);
+        }
+      }
+    } else {
       polyline=L.polyline(markers.map(function(m){return[m.ll.lat,m.ll.lng];}),
         {color:'#22ff66',weight:3.5,opacity:.9,dashArray:'10 8'}).addTo(map);
     }
   }
   function renderStats(){
-    var km=totalKm();
+    var km=totalKm()*(loopMode?2:1);
     var dv=fmtDist(km)+' '+unitStr();
     document.getElementById('sp-dist').innerHTML=fmtDist(km)+'<span style="font-size:10px;color:var(--muted);margin-left:2px;">'+unitStr()+'</span>';
     document.getElementById('sp-time').textContent=fmtTime(km);
     document.getElementById('sp-pts').textContent=markers.length;
-    document.getElementById('ri-dist').innerHTML=fmtDist(km)+'<span class="u">'+unitStr()+'</span>';
+    document.getElementById('ri-dist').innerHTML=fmtDist(km)+'<span class="u">'+unitStr()+'</span>'+(loopMode?'<span style="font-size:9px;color:var(--muted);margin-left:4px;">↩ out&back</span>':'');
     document.getElementById('ri-time').textContent=fmtTime(km);
     document.getElementById('fab-undo').style.opacity=markers.length?'1':'0.3';
   }
@@ -462,21 +501,58 @@ input[type=range]::-webkit-slider-thumb{
   }
   function refresh(){refreshIcons();drawLine();renderStats();renderWP();}
 
+  // OSRM route fetch (foot profile = roads + footpaths)
+  function fetchRoute(from, to, segIdx, cb){
+    var url='https://router.project-osrm.org/route/v1/foot/'
+      +from.lng+','+from.lat+';'+to.lng+','+to.lat
+      +'?overview=full&geometries=geojson';
+    fetch(url).then(function(r){return r.json();}).then(function(data){
+      if(data.code==='Ok' && data.routes && data.routes[0]){
+        var coords=data.routes[0].geometry.coordinates.map(function(c){return[c[1],c[0]];});
+        var km=data.routes[0].distance/1000;
+        cb(coords,km);
+      } else { cb(null,null); }
+    }).catch(function(){cb(null,null);});
+  }
+
   // MAP CLICK
   map.on('click',function(e){
     var ll={lat:e.latlng.lat,lng:e.latlng.lng};
     var lm=L.marker([ll.lat,ll.lng],{icon:mkIcon(markers.length+1,markers.length===0?'s':'e')}).addTo(map);
+    var prevLen=markers.length;
     markers.push({ll:ll,lm:lm});
-    refresh();
+
+    if(snapMode && prevLen>0){
+      var segIdx=prevLen-1;
+      segments[segIdx]={pts:null,km:null}; // placeholder
+      var snapBtn=document.getElementById('fab-snap');
+      snapBtn.classList.add('fetching');
+      refresh();
+      fetchRoute(markers[prevLen-1].ll, ll, segIdx, function(pts, km){
+        snapBtn.classList.remove('fetching');
+        if(pts){ segments[segIdx]={pts:pts,km:km}; }
+        else { segments[segIdx]={pts:null,km:hav(markers[prevLen-1].ll,ll)}; }
+        drawLine();renderStats();
+      });
+    } else {
+      segments[prevLen-1]=null; // no segment for straight-line mode
+      refresh();
+    }
   });
 
-  // LOCATE — zoom in on user
+  // LOCATE — zoom in on user with dot
   document.getElementById('fab-locate').addEventListener('click',function(){
     if(!navigator.geolocation){toast('Geolocation not supported');return;}
     var btn=document.getElementById('fab-locate');
     btn.classList.add('locating');
     navigator.geolocation.getCurrentPosition(function(p){
-      map.setView([p.coords.latitude,p.coords.longitude],16);
+      var lat=p.coords.latitude,lng=p.coords.longitude;
+      map.setView([lat,lng],18);
+      if(locDot){map.removeLayer(locDot);}
+      locDot=L.circleMarker([lat,lng],{
+        radius:8,color:'#22ff66',fillColor:'#22ff66',fillOpacity:.9,weight:2,
+        className:'loc-pulse'
+      }).addTo(map);
       btn.classList.remove('locating');
       toast('📍 Located');
     },function(){
@@ -488,7 +564,25 @@ input[type=range]::-webkit-slider-thumb{
   // UNDO
   document.getElementById('fab-undo').addEventListener('click',function(){
     if(!markers.length)return;
-    map.removeLayer(markers.pop().lm);refresh();
+    map.removeLayer(markers.pop().lm);
+    // remove last segment if exists
+    if(segments.length>=markers.length) segments.splice(markers.length,1);
+    refresh();
+  });
+
+  // LOOP TOGGLE
+  document.getElementById('fab-loop').addEventListener('click',function(){
+    loopMode=!loopMode;
+    this.classList.toggle('on',loopMode);
+    toast(loopMode?'↩ Out & back on':'↩ Out & back off');
+    renderStats();
+  });
+
+  // SNAP TOGGLE
+  document.getElementById('fab-snap').addEventListener('click',function(){
+    snapMode=!snapMode;
+    this.classList.toggle('on',snapMode);
+    toast(snapMode?'⬡ Snap to roads on':'⬡ Snap to roads off');
   });
 
   // CLEAR
@@ -496,6 +590,8 @@ input[type=range]::-webkit-slider-thumb{
     if(!markers.length)return;
     if(!window.confirm('Clear all markers?'))return;
     markers.forEach(function(m){map.removeLayer(m.lm);});markers=[];
+    segments=[];
+    routePolylines.forEach(function(p){map.removeLayer(p);});routePolylines=[];
     if(polyline){map.removeLayer(polyline);polyline=null;}
     refresh();
   });
