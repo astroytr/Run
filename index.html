@@ -309,13 +309,13 @@ input[type=range]::-webkit-slider-thumb{
   position:fixed;top:14px;right:14px;z-index:300;
   width:44px;height:44px;padding:0;
   border-radius:14px;overflow:hidden;
-  background:#111;border:1px solid var(--gborder);
+  background:rgba(0,0,0,.88);border:1px solid var(--gborder);
   cursor:pointer;transition:border-color .15s;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(10px);
 }
 #btn-maptile:active{border-color:var(--g);}
-#map-thumb{
-  width:44px;height:44px;display:block;
-}
+#map-icon{width:26px;height:26px;}
 
 /* ACCENT BUTTON — top left, squircle, full bg, matches island height */
 #btn-accent{
@@ -337,9 +337,9 @@ input[type=range]::-webkit-slider-thumb{
 <div id="topbar"></div>
 
 
-<!-- MAP THEME button top-right — squircle, thumbnail preview -->
+<!-- MAP THEME button top-right — squircle, SVG icon -->
 <button id="btn-maptile" title="Map style">
-  <canvas id="map-thumb" width="44" height="44"></canvas>
+  <svg id="map-icon" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"></svg>
 </button>
 
 <!-- ACCENT button top-left — squircle, full bg colour, lightning bolt icon -->
@@ -889,7 +889,7 @@ input[type=range]::-webkit-slider-thumb{
   });
   document.getElementById('dbg-in').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('dbg-run').click();});
 
-  // MAP TILE THEMES
+  // MAP TILE THEMES — clean stroke SVG icons, accent-coloured
   var tileLayer=null;
   var tileThemes=[
     {
@@ -897,22 +897,9 @@ input[type=range]::-webkit-slider-thumb{
       url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       filter:'brightness(.18) saturate(0)',
       attr:'© OpenStreetMap',
-      // canvas thumbnail: dark roads look
-      drawThumb:function(ctx){
-        var s=44;
-        // Dark — clean crescent moon on deep black
-        ctx.fillStyle='#060810';ctx.fillRect(0,0,s,s);
-        // subtle star field
-        ctx.fillStyle='rgba(200,210,255,.5)';
-        [[8,10],[35,8],[12,34],[38,30],[22,6],[6,26],[40,18]].forEach(function(p){
-          ctx.beginPath();ctx.arc(p[0],p[1],.9,0,Math.PI*2);ctx.fill();
-        });
-        // moon disc
-        ctx.fillStyle='#d8dde8';
-        ctx.beginPath();ctx.arc(24,22,11,0,Math.PI*2);ctx.fill();
-        // bite out
-        ctx.fillStyle='#060810';
-        ctx.beginPath();ctx.arc(29,18,10,0,Math.PI*2);ctx.fill();
+      // Crescent moon — filled silhouette, same weight as bolt
+      icon:function(c){
+        return '<path d="M26 23.5a10 10 0 1 1-11.5-9.8 7.5 7.5 0 0 0 11.5 9.8z" fill="'+c+'"/>';
       }
     },
     {
@@ -920,28 +907,13 @@ input[type=range]::-webkit-slider-thumb{
       url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       filter:'brightness(.85) saturate(.8)',
       attr:'© Esri',
-      drawThumb:function(ctx){
-        var s=44,cx=22,cy=22,r=14;
-        // Satellite — clean globe
-        ctx.fillStyle='#050d18';ctx.fillRect(0,0,s,s);
-        // ocean
-        var og=ctx.createRadialGradient(cx-4,cy-4,2,cx,cy,r);
-        og.addColorStop(0,'#1565a0');og.addColorStop(1,'#0a3060');
-        ctx.fillStyle=og;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-        // land blobs
-        ctx.fillStyle='#2e7d32';
-        ctx.beginPath();ctx.ellipse(18,19,5,4,-.4,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.ellipse(27,24,3,2.5,.3,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle='#388e3c';
-        ctx.beginPath();ctx.ellipse(20,27,3,2,0,0,Math.PI*2);ctx.fill();
-        // lat/lon grid lines
-        ctx.strokeStyle='rgba(150,200,255,.18)';ctx.lineWidth=.7;
-        ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
-        ctx.beginPath();ctx.ellipse(cx,cy,r,r*.4,0,0,Math.PI*2);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
-        // atmosphere glow
-        ctx.strokeStyle='rgba(100,180,255,.12)';ctx.lineWidth=2.5;
-        ctx.beginPath();ctx.arc(cx,cy,r+1,0,Math.PI*2);ctx.stroke();
+      // Globe — clean strokes, same language as bolt outline
+      icon:function(c){
+        return '<circle cx="22" cy="22" r="11" fill="none" stroke="'+c+'" stroke-width="1.8"/>'
+          +'<ellipse cx="22" cy="22" rx="5" ry="11" fill="none" stroke="'+c+'" stroke-width="1.4"/>'
+          +'<line x1="11" y1="22" x2="33" y2="22" stroke="'+c+'" stroke-width="1.4"/>'
+          +'<line x1="13.5" y1="16" x2="30.5" y2="16" stroke="'+c+'" stroke-width="1" stroke-opacity=".5"/>'
+          +'<line x1="13.5" y1="28" x2="30.5" y2="28" stroke="'+c+'" stroke-width="1" stroke-opacity=".5"/>';
       }
     },
     {
@@ -950,44 +922,26 @@ input[type=range]::-webkit-slider-thumb{
       filter:'brightness(.9) saturate(1)',
       attr:'© Esri',
       overlay:true,
-      drawThumb:function(ctx){
-        var s=44;
-        // Hybrid — clean layers stack
-        ctx.fillStyle='#080c08';ctx.fillRect(0,0,s,s);
-        // three diamond layers, bottom to top
-        var lyrs=[
-          {y:30,fill:'#1b4d2a',stroke:'#2e7d44'},
-          {y:23,fill:'#256636',stroke:'#3da358'},
-          {y:16,fill:'#2e7d44',stroke:'#52c97a'},
-        ];
-        lyrs.forEach(function(l){
-          ctx.fillStyle=l.fill;
-          ctx.beginPath();
-          ctx.moveTo(22,l.y-6);ctx.lineTo(36,l.y);ctx.lineTo(22,l.y+6);ctx.lineTo(8,l.y);
-          ctx.closePath();ctx.fill();
-          ctx.strokeStyle=l.stroke;ctx.lineWidth=.8;ctx.stroke();
-        });
-        // subtle road line on top layer
-        ctx.strokeStyle='rgba(255,255,180,.45)';ctx.lineWidth=1.2;ctx.lineCap='round';
-        ctx.beginPath();ctx.moveTo(13,16);ctx.lineTo(31,16);ctx.stroke();
+      // Stacked layers — 3 parallelograms, same stroke weight as bolt
+      icon:function(c){
+        return '<polygon points="22,14 33,19 22,24 11,19" fill="'+c+'" fill-opacity=".9" stroke="none"/>'
+          +'<polygon points="22,20 33,25 22,30 11,25" fill="'+c+'" fill-opacity=".45" stroke="none"/>'
+          +'<polygon points="22,26 33,31 22,36 11,31" fill="'+c+'" fill-opacity=".18" stroke="none"/>';
       }
     }
   ];
   var tileIdx=0;
   var overlayLayer=null;
 
-  function drawThumb(idx){
-    var canvas=document.getElementById('map-thumb');
-    var ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,44,44);
-    // rounded clip
-    ctx.save();
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(0,0,44,44,12);
-    else ctx.rect(0,0,44,44);
-    ctx.clip();
-    tileThemes[idx].drawThumb(ctx);
-    ctx.restore();
+  function getAccentColor(){
+    return accentThemes[accentIdx].g;
+  }
+
+  function drawMapIcon(idx){
+    var c=getAccentColor();
+    var svg=document.getElementById('map-icon');
+    svg.setAttribute('viewBox','0 0 44 44');
+    svg.innerHTML=tileThemes[idx].icon(c);
   }
 
   function applyTileTheme(idx){
@@ -1001,7 +955,7 @@ input[type=range]::-webkit-slider-thumb{
       overlayLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {maxZoom:19,opacity:.45}).addTo(map);
     }
-    drawThumb(idx);
+    drawMapIcon(idx);
   }
   applyTileTheme(0);
 
@@ -1013,19 +967,21 @@ input[type=range]::-webkit-slider-thumb{
 
   // ACCENT COLOUR THEMES
   var accentThemes=[
-    {label:'Green', g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)', gglow:'rgba(34,255,102,.08)', text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
-    {label:'White', g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666', dim:'#222'},
-    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)', gglow:'rgba(255,140,66,.08)', text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
+    {label:'Green',  g:'#22ff66', g2:'#18cc50', gborder:'rgba(34,255,102,.22)',  gglow:'rgba(34,255,102,.08)',  text:'#d8f5d8', muted:'#3d6b3d', dim:'#213521'},
+    {label:'White',  g:'#ffffff', g2:'#cccccc', gborder:'rgba(255,255,255,.22)', gglow:'rgba(255,255,255,.06)', text:'#f0f0f0', muted:'#666',    dim:'#222'},
+    {label:'Orange', g:'#ff8c42', g2:'#e07030', gborder:'rgba(255,140,66,.22)',  gglow:'rgba(255,140,66,.08)',  text:'#fff0e8', muted:'#7a4a2a', dim:'#3a2010'},
   ];
   var accentIdx=0;
 
   function applyAccent(idx){
     var a=accentThemes[idx];
-    var r=document.documentElement.style;
-    r.setProperty('--g',a.g);r.setProperty('--g2',a.g2);
-    r.setProperty('--gborder',a.gborder);r.setProperty('--gglow',a.gglow);
-    r.setProperty('--text',a.text);r.setProperty('--muted',a.muted);r.setProperty('--dim',a.dim);
+    var rs=document.documentElement.style;
+    rs.setProperty('--g',a.g);rs.setProperty('--g2',a.g2);
+    rs.setProperty('--gborder',a.gborder);rs.setProperty('--gglow',a.gglow);
+    rs.setProperty('--text',a.text);rs.setProperty('--muted',a.muted);rs.setProperty('--dim',a.dim);
     document.getElementById('btn-accent').style.background=a.g;
+    // re-tint the map icon with new accent
+    drawMapIcon(tileIdx);
   }
 
   document.getElementById('btn-accent').addEventListener('click',function(){
