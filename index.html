@@ -94,9 +94,18 @@ html,body{height:100%;width:100%;background:#000;color:#e8ffe8;font-family:'DM S
   border-radius:20px 20px 0 0;
   transform:translateY(calc(100% - 64px));
   transition:transform .35s cubic-bezier(.4,0,.2,1);
-  max-height:90vh;display:flex;flex-direction:column;
+  max-height:90dvh;display:flex;flex-direction:column;
 }
 #sheet.open{transform:translateY(0);}
+
+/* Hide top chrome when sheet is open */
+body.sheet-open #fabs,
+body.sheet-open #statpill,
+body.sheet-open #btn-accent,
+body.sheet-open #btn-maptile{
+  opacity:0;pointer-events:none;
+}
+#fabs,#statpill,#btn-accent,#btn-maptile{transition:opacity .25s;}
 
 #sheet-handle-area{
   height:64px;display:flex;flex-direction:column;align-items:center;
@@ -498,9 +507,13 @@ input[type=range]::-webkit-slider-thumb{
   // SHEET drag
   var sheet=document.getElementById('sheet');
   var dragArea=document.getElementById('sheet-handle-area');
-  dragArea.addEventListener('click',function(){
-    sheetOpen=!sheetOpen;
+  function setSheet(open){
+    sheetOpen=open;
     sheet.classList.toggle('open',sheetOpen);
+    document.body.classList.toggle('sheet-open',sheetOpen);
+  }
+  dragArea.addEventListener('click',function(){
+    setSheet(!sheetOpen);
   });
   var startY,startSheetY;
   dragArea.addEventListener('touchstart',function(e){
@@ -509,8 +522,8 @@ input[type=range]::-webkit-slider-thumb{
   },{passive:true});
   dragArea.addEventListener('touchend',function(e){
     var dy=e.changedTouches[0].clientY-startY;
-    if(dy<-40){sheetOpen=true;sheet.classList.add('open');}
-    else if(dy>40){sheetOpen=false;sheet.classList.remove('open');}
+    if(dy<-40){setSheet(true);}
+    else if(dy>40){setSheet(false);}
   },{passive:true});
 
   // ICONS
@@ -863,7 +876,7 @@ input[type=range]::-webkit-slider-thumb{
     }
     if(markers.length){map.fitBounds(L.latLngBounds(markers.map(function(m){return[m.ll.lat,m.ll.lng];})),{padding:[60,60]});}
     document.querySelector('.stab[data-t="route"]').click();
-    sheetOpen=true;sheet.classList.add('open');
+    setSheet(true);
     refresh();toast('✓ Loaded "'+r.name+'"');
   }
 
